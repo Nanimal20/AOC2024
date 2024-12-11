@@ -1,58 +1,51 @@
-def find_x_mas_in_file(filename, word="MAS"):
-    # Read the grid from the file
-    with open(filename, "r") as file:
-        grid = [line.strip() for line in file]
-
+def find_x_mas_patterns(text):
+    # Convert the single string input into a 2D grid
+    lines = text.strip().splitlines()
+    grid = [list(line.strip()) for line in lines]
     rows, cols = len(grid), len(grid[0])
-    word_len = len(word)
+    pattern_count = 0
 
-    def in_bounds(x, y):
+    def is_valid_position(x, y):
         return 0 <= x < rows and 0 <= y < cols
 
     def check_x_mas(center_x, center_y):
-        # Check vertical "MAS" centered at (center_x, center_y)
-        vertical = []
-        for i in range(-(word_len // 2), word_len // 2 + 1):
-            nx = center_x + i
-            if in_bounds(nx, center_y):
-                vertical.append(grid[nx][center_y])
-            else:
-                return False
-        vertical = "".join(vertical)
-        
-        # Check both diagonal directions
-        diagonal1, diagonal2 = [], []
-        for i in range(-(word_len // 2), word_len // 2 + 1):
-            nx1, ny1 = center_x + i, center_y + i
-            nx2, ny2 = center_x + i, center_y - i
-            if in_bounds(nx1, ny1):
-                diagonal1.append(grid[nx1][ny1])
-            if in_bounds(nx2, ny2):
-                diagonal2.append(grid[nx2][ny2])
-        diagonal1 = "".join(diagonal1)
-        diagonal2 = "".join(diagonal2)
+        # Ensure the center is 'A'
+        if grid[center_x][center_y] != 'A':
+            return 0
 
-        # Check if we have a valid X-MAS pattern
-        reversed_word = word[::-1]
-        return (
-            (vertical == word and diagonal1 == word) or
-            (vertical == word and diagonal1 == reversed_word) or
-            (vertical == reversed_word and diagonal1 == word) or
-            (vertical == reversed_word and diagonal1 == reversed_word) or
-            (vertical == word and diagonal2 == word) or
-            (vertical == word and diagonal2 == reversed_word) or
-            (vertical == reversed_word and diagonal2 == word) or
-            (vertical == reversed_word and diagonal2 == reversed_word)
-        )
+        # Check the diagonals for two "MAS" patterns
+        diagonals = [
+            [(-1, -1), (1, 1)],  # Top-left to bottom-right
+            [(-1, 1), (1, -1)]   # Top-right to bottom-left
+        ]
+        count = 0
 
-    count = 0
+        for diagonal in diagonals:
+            chars = []
+            for dx, dy in diagonal:
+                nx, ny = center_x + dx, center_y + dy
+                if is_valid_position(nx, ny):
+                    chars.append(grid[nx][ny])
+                else:
+                    chars.append(None)
+            
+            # Check if the diagonal forms "MAS" (in any order)
+            if chars[0] and chars[1] and set(chars) == {'M', 'S'}:
+                count += 1
+
+        return 1 if count == 2 else 0  # Both diagonals must match
+
+    # Iterate over every cell in the grid
     for r in range(rows):
         for c in range(cols):
-            if check_x_mas(r, c):
-                count += 1
-    return count
+            pattern_count += check_x_mas(r, c)
 
-# Example usage
-filename = "words.txt"
-result = find_x_mas_in_file(filename)
+    return pattern_count
+
+
+# Read the input text file
+with open("words.txt", "r") as file:
+    text = file.read()
+
+result = find_x_mas_patterns(text)
 print(f"Total X-MAS patterns found: {result}")
